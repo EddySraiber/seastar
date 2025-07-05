@@ -1,0 +1,17 @@
+# KV Server specific build artifacts
+*.o
+kv_server
+
+# KV Server test executables
+tests/test_utils
+tests/test_lru
+tests/test_encoding
+
+# KV Server data directories
+dev_data/
+kv_log_*.log
+
+# KV Server CMake files (local to this app)
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
