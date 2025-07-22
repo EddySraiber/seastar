@@ -37,7 +37,6 @@ public:
         }).then([this] {
             _server = std::make_unique<seastar::httpd::http_server>("kv_server");
             _api_handler = std::make_unique<kv_api_handler>(_stores);
-            
             _api_handler->setup_routes(*_server);
             
             // Setup health endpoint

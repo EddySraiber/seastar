@@ -1,7 +1,7 @@
 # KV Store Makefile
 COMPILER = g++
 CFLAGS = -g -std=c++23 -Wall -Wextra -Wno-unused-parameter
-MODE = release
+MODE = debug
 SEASTAR_DIR = ../..
 
 # Project settings
@@ -11,7 +11,7 @@ OBJECTS = $(SOURCES:.cc=.o)
 TARGET = $(PROJECT_NAME)
 
 # Seastar settings
-SEASTAR_LIB = $(SEASTAR_DIR)/build/$(MODE)/libseastar.a
+SEASTAR_LIB = $(SEASTAR_DIR)/build/$(MODE)/libseastar.so
 SEASTAR_PC = $(SEASTAR_DIR)/build/$(MODE)/seastar.pc
 
 # Default target
@@ -32,7 +32,7 @@ $(TARGET): $(SEASTAR_LIB) $(OBJECTS)
 $(SEASTAR_LIB):
 	@echo "Building Seastar..."
 	cd $(SEASTAR_DIR) && ./configure.py --mode="$(MODE)" --disable-dpdk --disable-hwloc --cflags="$(CFLAGS)" --compiler="$(COMPILER)"
-	ninja -C $(SEASTAR_DIR)/build/$(MODE) libseastar.a
+	ninja -C $(SEASTAR_DIR)/build/$(MODE) libseastar.so
 	@echo "Seastar build complete"
 
 # Clean build artifacts

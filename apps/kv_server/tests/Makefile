@@ -3,9 +3,9 @@
 
 CXX = g++
 CXXFLAGS = -std=c++23 -Wall -Wextra -Wno-unused-parameter -g
-SEASTAR_INCLUDE = -I/home/eddy/ScyllaDB/seastar/include -I/home/eddy/ScyllaDB/seastar/build/release/gen/include -I..
-SEASTAR_DEFINES = -DSEASTAR_API_LEVEL=7 -DSEASTAR_SSTRING -DSEASTAR_DEPRECATED_OSTREAM_FORMATTERS -DSEASTAR_LOGGER_COMPILE_TIME_FMT -DSEASTAR_SCHEDULING_GROUPS_COUNT=16 -DSEASTAR_LOGGER_TYPE_STDOUT -DFMT_SHARED -I/usr/include/p11-kit-1
-SEASTAR_LIBS = /home/eddy/ScyllaDB/seastar/build/release/libseastar.a \
+SEASTAR_INCLUDE = -I/home/eddy/seastar/include -I/home/eddy/seastar/build/debug/gen/include -I..
+SEASTAR_DEFINES = -DSEASTAR_API_LEVEL=7 -DSEASTAR_SSTRING -DSEASTAR_DEPRECATED_OSTREAM_FORMATTERS -DSEASTAR_LOGGER_COMPILE_TIME_FMT -DSEASTAR_SCHEDULING_GROUPS_COUNT=16 -DSEASTAR_DEBUG -DSEASTAR_LOGGER_TYPE_STDOUT -DFMT_SHARED -I/usr/include/p11-kit-1
+SEASTAR_LIBS = /home/eddy/seastar/build/debug/libseastar.so \
 	/usr/lib/x86_64-linux-gnu/libboost_program_options.so \
 	/usr/lib/x86_64-linux-gnu/libboost_thread.so \
 	/usr/lib/x86_64-linux-gnu/libcares.so \

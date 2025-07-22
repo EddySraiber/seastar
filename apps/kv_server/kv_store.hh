@@ -22,6 +22,7 @@
 #include <seastar/http/api_docs.hh>
 #include <seastar/http/request.hh>
 #include <seastar/http/reply.hh>
+#include <seastar/http/matchrules.hh>
 
 #include <unordered_map>
 #include <list>
@@ -157,13 +158,6 @@ private:
     
 public:
     explicit kv_api_handler(distributed<persistent_kv_store>& stores) : _stores(stores) {}
-    
-    // REST API endpoints
-    future<std::unique_ptr<seastar::http::reply>> handle_get(std::unique_ptr<seastar::http::request> req);
-    future<std::unique_ptr<seastar::http::reply>> handle_put(std::unique_ptr<seastar::http::request> req);
-    future<std::unique_ptr<seastar::http::reply>> handle_delete(std::unique_ptr<seastar::http::request> req);
-    future<std::unique_ptr<seastar::http::reply>> handle_list_keys(std::unique_ptr<seastar::http::request> req);
-    
     
     void setup_routes(seastar::httpd::http_server& server);
 };
