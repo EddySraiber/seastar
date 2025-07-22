@@ -75,23 +75,33 @@ persistent_kv_store::persistent_kv_store(const sstring& data_dir, size_t cache_s
 }
 
 future<> persistent_kv_store::start() {
-    // Simplified start - skip file operations for now to avoid crash
+    // Simple synchronous loading from disk
+    _load_simple_from_disk();
     return make_ready_future<>();
 }
 
 future<> persistent_kv_store::stop() {
-    // Simplified stop - no file operations for now
-    return make_ready_future<>();
+    // Flush and close log stream
+    return _log_stream.flush().then([this] {
+        return _log_stream.close();
+    }).then([this] {
+        return _log_file.close();
+    });
 }
 
 future<> persistent_kv_store::_ensure_log_file_open() {
-    return open_file_dma(_log_file_path, open_flags::create | open_flags::wo).then([this](file f) {
+    // Create directory if it doesn't exist
+    return recursive_touch_directory(_data_dir).then([this] {
+        // Open log file for append (position at end)
+        return open_file_dma(_log_file_path, open_flags::create | open_flags::wo);
+    }).then([this](file f) {
         _log_file = std::move(f);
-        return _log_file.size().then([this](size_t size) {
-            return make_file_output_stream(_log_file, size);
-        }).then([this](output_stream<char> stream) {
-            _log_stream = std::move(stream);
-        });
+        // Position at end of file for append
+        return _log_file.size();
+    }).then([this](size_t size) {
+        return make_file_output_stream(_log_file, size);
+    }).then([this](output_stream<char> stream) {
+        _log_stream = std::move(stream);
     });
 }
 
@@ -207,7 +217,9 @@ future<> persistent_kv_store::put(const sstring& key, const sstring& value) {
     // Update persistent storage
     _persistent_data[key] = value;
     
-    // Skip log writing for now to avoid crash
+    // Save to disk immediately for simple persistence
+    _save_simple_to_disk();
+    
     return make_ready_future<>();
 }
 
@@ -222,7 +234,9 @@ future<> persistent_kv_store::remove(const sstring& key) {
     // Remove from persistent storage
     _persistent_data.erase(key);
     
-    // Skip log writing for now to avoid crash
+    // Save to disk immediately for simple persistence
+    _save_simple_to_disk();
+    
     return make_ready_future<>();
 }
 
@@ -240,6 +254,57 @@ future<std::vector<sstring>> persistent_kv_store::get_all_keys() {
     return make_ready_future<std::vector<sstring>>(std::move(keys));
 }
 
+// Simple persistence implementation
+void persistent_kv_store::_load_simple_from_disk() {
+    // Create directory if it doesn't exist
+    std::filesystem::create_directories(_data_dir.c_str());
+    
+    // Simple data file path 
+    std::string data_file = _data_dir.c_str() + std::string("/data_") + std::to_string(this_shard_id()) + ".txt";
+    
+    std::ifstream file(data_file);
+    if (!file.is_open()) {
+        // File doesn't exist, that's OK - start with empty state
+        return;
+    }
+    
+    std::string line;
+    while (std::getline(file, line)) {
+        if (line.empty()) continue;
+        
+        // Parse "key=value" format
+        size_t eq_pos = line.find('=');
+        if (eq_pos != std::string::npos) {
+            std::string key = line.substr(0, eq_pos);
+            std::string value = line.substr(eq_pos + 1);
+            
+            // Add to persistent storage and cache
+            _persistent_data[sstring(key)] = sstring(value);
+            _cache.put(sstring(key), sstring(value));
+        }
+    }
+    file.close();
+}
+
+void persistent_kv_store::_save_simple_to_disk() {
+    // Create directory if it doesn't exist
+    std::filesystem::create_directories(_data_dir.c_str());
+    
+    // Simple data file path
+    std::string data_file = _data_dir.c_str() + std::string("/data_") + std::to_string(this_shard_id()) + ".txt";
+    
+    std::ofstream file(data_file);
+    if (!file.is_open()) {
+        return; // Couldn't open file for writing
+    }
+    
+    // Write all key-value pairs in simple "key=value" format
+    for (const auto& pair : _persistent_data) {
+        file << pair.first.c_str() << "=" << pair.second.c_str() << std::endl;
+    }
+    
+    file.close();
+}
 
 void kv_api_handler::setup_routes(seastar::httpd::http_server& server) {
     // List all keys endpoint (no parameters)

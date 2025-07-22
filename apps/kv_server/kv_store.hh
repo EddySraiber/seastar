@@ -33,6 +33,7 @@
 #include <fstream>
 #include <sstream>
 #include <chrono>
+#include <filesystem>
 
 using namespace seastar;
 
@@ -129,10 +130,14 @@ private:
         return hasher(key) % smp::count;
     }
     
-    // Persistence operations
+    // Persistence operations  
     future<> _write_log_entry(const sstring& operation, const sstring& key, const sstring& value = "");
     future<> _load_from_disk();
     future<> _ensure_log_file_open();
+    
+    // Simple persistence methods
+    void _load_simple_from_disk();
+    void _save_simple_to_disk();
     
 public:
     explicit persistent_kv_store(const sstring& data_dir, size_t cache_size = 1000);
